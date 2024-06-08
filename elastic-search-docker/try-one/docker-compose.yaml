@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    networks:
+      - mongo-elastic-net
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  elasticsearch:
+    image: elasticsearch:7.17.0
+    container_name: elasticsearch
+    environment:
+      - discovery.type=single-node
+    networks:
+      - mongo-elastic-net
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+
+  logstash:
+    build: .
+    container_name: logstash
+    depends_on:
+      - mongodb
+      - elasticsearch
+    networks:
+      - mongo-elastic-net
+    volumes:
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+      - logstash-data:/opt/logstash-mongodb/
+    environment:
+      - pipeline.ecs_compatibility=disabled
+
+networks:
+  mongo-elastic-net:
+
+volumes:
+  mongo-data:
+  logstash-data:
